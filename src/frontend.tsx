@@ -6,11 +6,19 @@
  */
 
 import { createRoot } from "react-dom/client";
-import { App } from "./App";
+import App from "./App";
+import { BrowserRouter } from "react-router-dom";
+import React from "react";
+import "./index.css";
 
 function start() {
   const root = createRoot(document.getElementById("root")!);
-  root.render(<App />);
+  root.render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>);
 }
 
 if (document.readyState === "loading") {

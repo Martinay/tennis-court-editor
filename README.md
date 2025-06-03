@@ -1,4 +1,5 @@
 # bun-react-tailwind-template
+Created with my brain and github copilot in agent mode.
 
 To install dependencies:
 

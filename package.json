@@ -1,5 +1,5 @@
 {
-  "name": "bun-react-template",
+  "name": "tennis-court-editor",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -11,16 +11,16 @@
     "build": "bun run build.ts"
   },
   "dependencies": {
-    "bun-plugin-tailwind": "^0.0.14",
     "react": "^19",
     "react-dom": "^19",
     "react-router-dom": "^7.6.1",
-    "swiper": "^11.2.8",
-    "tailwindcss": "^4.0.6"
+    "swiper": "^11.2.8"
   },
   "devDependencies": {
+    "@types/bun": "latest",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/bun": "latest"
+    "bun-plugin-tailwind": "^0.0.15",
+    "tailwindcss": "^4.1.8"
   }
 }
