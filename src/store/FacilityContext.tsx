@@ -100,13 +100,15 @@ function reducer(state: Facility[], action: Action): Facility[] {
         const courts = [...f.courts];
         const court = { ...courts[action.court] };
         const currentDetails = court.lines[action.line];
+          court.lines[action.line] = { ...currentDetails, ...action.details };
         
-        court.lines[action.line] = { ...currentDetails, ...action.details };
-        
-        // If it's a new line, automatically set anchor and dübel
+        // If it's a new line, automatically set anchor and dübel (except for sidelines)
         if (action.details.isNew) {
-          court.lines[action.line].anchorSet = true;
-          court.lines[action.line].dubelUpdated = true;
+          const isSideline = action.line.includes('sideline');
+          if (!isSideline) {
+            court.lines[action.line].anchorSet = true;
+            court.lines[action.line].dubelUpdated = true;
+          }
         }
         
         courts[action.court] = court;

@@ -35,14 +35,19 @@ export default function LinePopup({
   onUpdate, 
   position 
 }: LinePopupProps) {
-  if (!isOpen) return null;
-  const handleCheckboxChange = (field: keyof LineDetails) => {
+  if (!isOpen) return null;  const handleCheckboxChange = (field: keyof LineDetails) => {
     const updates: Partial<LineDetails> = { [field]: !lineDetails[field] };
     
-    // If marking as new line, automatically enable anchor and dübel, and disable line repaired
+    // Check if current line is a sideline
+    const isSideline = lineId.includes('sideline');
+    
+    // If marking as new line, automatically enable anchor and dübel (except for sidelines), and disable line repaired
     if (field === 'isNew' && !lineDetails.isNew) {
-      updates.anchorSet = true;
-      updates.dubelUpdated = true;
+      // Only auto-enable anchor and dübel for non-sideline lines
+      if (!isSideline) {
+        updates.anchorSet = true;
+        updates.dubelUpdated = true;
+      }
       updates.lineRepaired = false;
     }
     
