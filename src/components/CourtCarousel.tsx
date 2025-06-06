@@ -3,23 +3,62 @@ import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import { useFacilities } from "../store/FacilityContext";
+import { useState } from "react";
+import { useFacilities, LineId, LineDetails } from "../store/FacilityContext";
 import TennisCourtSVG from "./TennisCourtSVG";
+import LinePopup from "./LinePopup";
 
 export default function CourtCarousel({ facilityId }: { facilityId: string }) {
-  const [facs] = useFacilities();
-  const fac    = facs.find(f => f.id === facilityId)!;
+  const [facs, dispatch] = useFacilities();
+  const fac = facs.find(f => f.id === facilityId)!;
+  
+  const [popupState, setPopupState] = useState<{
+    isOpen: boolean;
+    lineId: LineId | null;
+    courtIndex: number | null;
+    position: { x: number; y: number };
+  }>({
+    isOpen: false,
+    lineId: null,
+    courtIndex: null,
+    position: { x: 0, y: 0 }
+  });
+
+  const handleLineClick = (lineId: LineId, courtIndex: number, event: React.MouseEvent) => {
+    event.stopPropagation();
+    // Get the carousel container's bounding rect for centering
+    const carouselElement = document.querySelector('.court-swiper');
+    if (carouselElement) {
+      const rect = carouselElement.getBoundingClientRect();
+      setPopupState({
+        isOpen: true,
+        lineId,
+        courtIndex,
+        position: { 
+          x: rect.left + rect.width / 2, 
+          y: rect.top + rect.height / 2 
+        }
+      });
+    }
+  };
+
+  const handlePopupUpdate = (updates: Partial<LineDetails>) => {
+    if (!popupState.lineId || popupState.courtIndex === null) return;
+    
+    dispatch({
+      type: "UPDATE_LINE_DETAILS",
+      fid: facilityId,
+      court: popupState.courtIndex,
+      line: popupState.lineId,
+      details: updates
+    });
+  };
+
+  const closePopup = () => {
+    setPopupState({ isOpen: false, lineId: null, courtIndex: null, position: { x: 0, y: 0 } });
+  };
   return (
     <div className="h-full flex flex-col p-4 md:p-6">
-      {/* Court Counter/Info */}
-      <div className="flex items-center justify-center mb-4">
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 shadow-md border border-white/20">
-          <span className="text-slate-600 text-sm font-medium">
-            {fac.courts.length === 1 ? '1 Tennisplatz' : `${fac.courts.length} Tennisplätze`}
-          </span>
-        </div>
-      </div>
-
       {/* Swiper Container */}
       <div className="flex-1 min-h-0">
         <Swiper 
@@ -47,37 +86,45 @@ export default function CourtCarousel({ facilityId }: { facilityId: string }) {
                     <h2 className="text-lg md:text-xl font-bold">🎾 Platz {idx + 1}</h2>
                   </div>
                 </div>
-                
-                {/* Court Display Area */}
+                  {/* Court Display Area */}
                 <div className="flex-1 flex items-center justify-center min-h-0 bg-gradient-to-br from-emerald-50/50 to-teal-50/50 rounded-xl p-4 border border-emerald-100">
                   <div className="w-full h-full max-w-md">
-                    <TennisCourtSVG facilityId={facilityId} courtIndex={idx} />
+                    <TennisCourtSVG facilityId={facilityId} courtIndex={idx} onLineClick={handleLineClick} />
                   </div>
-                </div>
-
-                {/* Court Info/Instructions */}
+                </div>                {/* Court Info/Instructions */}
                 <div className="mt-4 text-center">
-                  <p className="text-sm text-slate-600">
-                    Klicken Sie auf Linien und Anker, um sie zu markieren
+                  <p className="text-sm md:text-base text-slate-600">
+                    {window.innerWidth <= 768 ? 'Tippen Sie auf Linien für Details' : 'Klicken Sie auf Linien, um Details zu bearbeiten'}
                   </p>
                 </div>
               </div>
             </SwiperSlide>
           ))}
-          
-          {/* Custom Navigation Buttons */}
+            {/* Custom Navigation Buttons */}
           {fac.courts.length > 1 && (
             <>
-              <div className="swiper-button-prev-custom absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-white/20 flex items-center justify-center text-teal-600 hover:text-teal-700 hover:scale-110 transition-all duration-200 cursor-pointer">
-                <span className="text-xl">←</span>
+              <div className="swiper-button-prev-custom absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-white/20 flex items-center justify-center text-teal-600 hover:text-teal-700 hover:scale-110 transition-all duration-200 cursor-pointer touch-target">
+                <span className="text-xl md:text-2xl">←</span>
               </div>
-              <div className="swiper-button-next-custom absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-white/20 flex items-center justify-center text-teal-600 hover:text-teal-700 hover:scale-110 transition-all duration-200 cursor-pointer">
-                <span className="text-xl">→</span>
+              <div className="swiper-button-next-custom absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 md:w-14 md:h-14 bg-white/90 backdrop-blur-sm rounded-full shadow-lg border border-white/20 flex items-center justify-center text-teal-600 hover:text-teal-700 hover:scale-110 transition-all duration-200 cursor-pointer touch-target">
+                <span className="text-xl md:text-2xl">→</span>
               </div>
             </>
           )}
         </Swiper>
       </div>
+
+      {/* Line Details Popup */}
+      {popupState.isOpen && popupState.lineId && popupState.courtIndex !== null && (
+        <LinePopup
+          isOpen={popupState.isOpen}
+          onClose={closePopup}
+          lineId={popupState.lineId}
+          lineDetails={fac.courts[popupState.courtIndex].lines[popupState.lineId]}
+          onUpdate={handlePopupUpdate}
+          position={popupState.position}
+        />
+      )}
     </div>
   );
 }

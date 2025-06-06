@@ -19,10 +19,24 @@ export default function Home() {
         id: crypto.randomUUID(),
         name,
         numCourts: courts,
-        view,
-        courts: Array.from({ length: courts }, () => ({
-          lines:   { baselineNear:false, baselineFar:false, sidelineLeft:false, sidelineRight:false, serviceLine:false },
-          anchors: { a1:false, a2:false, a3:false, a4:false },
+        view,        courts: Array.from({ length: courts }, () => ({
+          lines: {
+            baselineNear: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            baselineFar: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            sidelineDoubleNearLeft: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            sidelineDoubleNearRight: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            sidelineDoubleFarLeft: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            sidelineDoubleFarRight: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            sidelineSingleNearLeft: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            sidelineSingleNearRight: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            sidelineSingleFarLeft: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            sidelineSingleFarRight: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            serviceLineNear: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            serviceLineFar: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            serviceLineCenterNear: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+            serviceLineCenterFar: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
+          },
+          anchors: { a1: false, a2: false, a3: false, a4: false },
         })),
       },
     });
@@ -132,11 +146,28 @@ export default function Home() {
                           className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-semibold px-6 py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95"
                         >
                           📋 Öffnen
-                        </button>
-
-                        <button
+                        </button>                        <button
                           onClick={() => {
-                            const blob = new Blob([JSON.stringify(f, null, 2)], { type:"application/json" });
+                            // Create enhanced export data with readable format
+                            const exportData = {
+                              ...f,
+                              courts: f.courts.map((court, index) => ({
+                                courtNumber: index + 1,                                lines: Object.entries(court.lines).map(([lineId, details]) => ({
+                                  line: lineId,
+                                  anchorSet: details.anchorSet,
+                                  dubelUpdated: details.dubelUpdated,
+                                  lineRepaired: details.lineRepaired,
+                                  isNew: details.isNew
+                                })).filter(line => 
+                                  line.anchorSet || line.dubelUpdated || line.lineRepaired || line.isNew
+                                ),
+                                anchors: Object.entries(court.anchors)
+                                  .filter(([, active]) => active)
+                                  .map(([anchorId]) => anchorId)
+                              }))
+                            };
+                            
+                            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type:"application/json" });
                             const url = URL.createObjectURL(blob);
                             const a   = document.createElement("a");
                             a.href = url;
