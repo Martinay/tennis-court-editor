@@ -11,6 +11,7 @@
     "build": "bun run build.ts"
   },
   "dependencies": {
+    "jspdf": "^3.0.1",
     "react": "^19",
     "react-dom": "^19",
     "react-router-dom": "^7.6.1",

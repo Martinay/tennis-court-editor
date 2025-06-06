@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
 import { useFacilities } from "../store/FacilityContext";
 import CourtCarousel from "@/components/CourtCarousel";
+import { generatePDFReport } from "../utils/pdfGenerator";
 
 export default function Facility() {
   const { id }  = useParams();               // facility id from route
@@ -28,6 +29,10 @@ export default function Facility() {
     setTempView("");
   };
 
+  const handlePDFExport = () => {
+    generatePDFReport(fac);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 overflow-hidden">
       {/* Header */}
@@ -42,14 +47,21 @@ export default function Facility() {
             </div>
             <span className="font-semibold hidden sm:block">Zurück zu Anlagen</span>
           </Link>
-          
-          <div className="text-center flex-1 max-w-md mx-4">
+            <div className="text-center flex-1 max-w-md mx-4">
             <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
               {fac.name}
             </h1>
           </div>
-          
-          <div className="w-24 md:w-32" /> {/* Spacer for centering */}
+            <div className="flex items-center gap-3">
+            <button
+              onClick={handlePDFExport}
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold px-4 py-2 md:px-6 md:py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex items-center gap-2"
+              title="PDF-Bericht erstellen"
+            >
+              <span className="text-lg">📄</span>
+              <span className="hidden sm:block">PDF-Bericht</span>
+            </button>
+          </div>
         </div>
       </header>
 
