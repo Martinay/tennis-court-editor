@@ -5,12 +5,25 @@ import { useNavigate } from "react-router-dom";
 export default function Home() {
   const navigate = useNavigate();
   const [facs, dispatch] = useFacilities();
-
+  // Helper function to get today's date in YYYY-MM-DD format
+  const getTodayString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   // ---- form local state
   const [name, setName] = useState("");
   const [courts, setCourts] = useState(2);
   const [view, setView] = useState("Weg");
-
+  const [startDate, setStartDate] = useState(getTodayString());
+  const [endDate, setEndDate] = useState(getTodayString());
+  
+  // ---- editing existing facility time period
+  const [editingFacilityId, setEditingFacilityId] = useState<string | null>(null);
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
   const createFacility = () => {
     if (!name.trim()) return;
     dispatch({
@@ -19,7 +32,11 @@ export default function Home() {
         id: crypto.randomUUID(),
         name,
         numCourts: courts,
-        view,        courts: Array.from({ length: courts }, () => ({
+        view,
+        zeitraum: {
+          startDate,
+          endDate
+        },courts: Array.from({ length: courts }, () => ({
           lines: {
             baselineNear: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
             baselineFar: { anchorSet: false, dubelUpdated: false, lineRepaired: false, isNew: false },
@@ -38,9 +55,38 @@ export default function Home() {
           },
           anchors: { a1: false, a2: false, a3: false, a4: false },
         })),
-      },
+      },    });
+    setName("");    setStartDate(getTodayString());
+    setEndDate(getTodayString());
+  };
+
+  const handleEditZeitraum = (facility: any) => {
+    setEditingFacilityId(facility.id);
+    setEditStartDate(facility.zeitraum?.startDate || getTodayString());
+    setEditEndDate(facility.zeitraum?.endDate || getTodayString());
+  };
+
+  const handleSaveZeitraum = () => {
+    if (!editingFacilityId) return;
+    
+    dispatch({
+      type: "UPDATE_ZEITRAUM",
+      fid: editingFacilityId,
+      zeitraum: {
+        startDate: editStartDate,
+        endDate: editEndDate
+      }
     });
-    setName("");
+    
+    setEditingFacilityId(null);
+    setEditStartDate("");
+    setEditEndDate("");
+  };
+
+  const handleCancelEditZeitraum = () => {
+    setEditingFacilityId(null);
+    setEditStartDate("");
+    setEditEndDate("");
   };
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 overflow-hidden">
@@ -64,8 +110,7 @@ export default function Home() {
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-slate-800">Neue Anlage anlegen</h2>
             </div>
-            
-            <div className="grid md:grid-cols-3 gap-4 md:gap-6">
+              <div className="grid md:grid-cols-3 gap-4 md:gap-6">
               <div className="md:col-span-1">
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Anlagen-Name</label>
                 <input
@@ -100,6 +145,34 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Time Period Section */}
+            <div className="mt-6 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200">
+              <h3 className="text-lg font-semibold text-emerald-700 mb-4 flex items-center gap-2">
+                📅 Renovierungszeitraum
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Von (Startdatum)</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-teal-400 focus:ring-4 focus:ring-teal-100 transition-all duration-200 bg-white/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Bis (Enddatum)</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    min={startDate}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-teal-400 focus:ring-4 focus:ring-teal-100 transition-all duration-200 bg-white/50"
+                  />
+                </div>
+              </div>
+            </div>
+
             <button
               onClick={createFacility}
               disabled={!name.trim()}
@@ -122,21 +195,73 @@ export default function Home() {
                 <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-3">
                   <span className="w-8 h-8 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-lg flex items-center justify-center text-white text-sm font-bold">
                     {facs.length}
-                  </span>
-                  Ihre Tennisanlagen
+                  </span>                  Ihre Tennisanlagen
                 </h2>
-                {facs.map(f => (
+                {[...facs]
+                  .sort((a, b) => {
+                    // Sort by start date descending (newest first)
+                    const dateA = new Date(a.zeitraum?.startDate || '1900-01-01');
+                    const dateB = new Date(b.zeitraum?.startDate || '1900-01-01');
+                    return dateB.getTime() - dateA.getTime();
+                  })
+                  .map(f => (
                   <div key={f.id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6 hover:shadow-xl transition-all duration-200 transform hover:scale-[1.01]">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">{f.name}</h3>
-                        <div className="flex flex-wrap gap-3 text-sm">
+                        <h3 className="text-xl font-bold text-slate-800 mb-2">{f.name}</h3>                        <div className="flex flex-wrap gap-3 text-sm">
                           <span className="bg-teal-100 text-teal-700 px-3 py-1 rounded-full font-medium">
                             🎾 {f.numCourts} {f.numCourts === 1 ? 'Platz' : 'Plätze'}
+                          </span>                          <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium">
+                            👓 {f.view}
                           </span>
-                          <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium">
-                            🧭 {f.view}
-                          </span>
+                          {editingFacilityId === f.id ? (
+                            <div className="flex items-center gap-2 bg-white rounded-full p-1 shadow-md border border-purple-200">
+                              <input 
+                                type="date" 
+                                value={editStartDate} 
+                                onChange={e => setEditStartDate(e.target.value)}
+                                className="px-2 py-1 border border-slate-200 rounded text-xs focus:border-purple-400 focus:ring-1 focus:ring-purple-100 transition-all duration-200"
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') handleSaveZeitraum();
+                                  if (e.key === 'Escape') handleCancelEditZeitraum();
+                                }}
+                              />
+                              <span className="text-xs text-slate-400">-</span>
+                              <input 
+                                type="date" 
+                                value={editEndDate} 
+                                onChange={e => setEditEndDate(e.target.value)}
+                                min={editStartDate}
+                                className="px-2 py-1 border border-slate-200 rounded text-xs focus:border-purple-400 focus:ring-1 focus:ring-purple-100 transition-all duration-200"
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') handleSaveZeitraum();
+                                  if (e.key === 'Escape') handleCancelEditZeitraum();
+                                }}
+                              />
+                              <button 
+                                onClick={handleSaveZeitraum}
+                                className="bg-purple-500 hover:bg-purple-600 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center transition-all duration-200"
+                                title="Speichern (Enter)"
+                              >
+                                ✓
+                              </button>
+                              <button 
+                                onClick={handleCancelEditZeitraum}
+                                className="bg-slate-400 hover:bg-slate-500 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center transition-all duration-200"
+                                title="Abbrechen (Escape)"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleEditZeitraum(f)}
+                              className="bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1 rounded-full font-medium transition-all duration-200 hover:scale-105"
+                              title="Klicken zum Bearbeiten"
+                            >
+                              📅 {f.zeitraum ? new Date(f.zeitraum.startDate).toLocaleDateString('de-DE') : '—'} - {f.zeitraum ? new Date(f.zeitraum.endDate).toLocaleDateString('de-DE') : '—'} ✏️
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -151,8 +276,15 @@ export default function Home() {
                             // Create enhanced export data with readable format
                             const exportData = {
                               ...f,
+                              zeitraum: {
+                                startDate: f.zeitraum.startDate,
+                                endDate: f.zeitraum.endDate,
+                                startDateFormatted: new Date(f.zeitraum.startDate).toLocaleDateString('de-DE'),
+                                endDateFormatted: new Date(f.zeitraum.endDate).toLocaleDateString('de-DE')
+                              },
                               courts: f.courts.map((court, index) => ({
-                                courtNumber: index + 1,                                lines: Object.entries(court.lines).map(([lineId, details]) => ({
+                                courtNumber: index + 1,
+                                lines: Object.entries(court.lines).map(([lineId, details]) => ({
                                   line: lineId,
                                   anchorSet: details.anchorSet,
                                   dubelUpdated: details.dubelUpdated,

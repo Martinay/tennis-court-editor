@@ -21,14 +21,28 @@ export interface Facility {
   name:        string;
   numCourts:   number;
   view:        string;               // Blickrichtung (e.g. "Weg")
+  zeitraum:    {                     // Renovation time period
+    startDate: string;               // ISO date string (YYYY-MM-DD)
+    endDate:   string;               // ISO date string (YYYY-MM-DD)
+  };
   courts:      CourtState[];         // length === numCourts
 }
 
 // ----------  LocalStorage helpers
 const STORAGE_KEY = "facilities_v1";
+const getTodayString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const load = (): Facility[] => {
   const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : [];
+  const facilities = raw ? JSON.parse(raw) : [];
+  
+  return facilities;
 };
 const save = (facs: Facility[]) =>
   localStorage.setItem(STORAGE_KEY, JSON.stringify(facs));
@@ -37,6 +51,7 @@ const save = (facs: Facility[]) =>
 type Action =
   | { type: "ADD_FACILITY"; payload: Facility }
   | { type: "UPDATE_FACILITY"; payload: Facility }
+  | { type: "UPDATE_ZEITRAUM"; fid: string; zeitraum: { startDate: string; endDate: string } }
   | { type: "UPDATE_LINE_DETAILS"; fid: string; court: number; line: LineId; details: Partial<LineDetails> }
   | { type: "TOGGLE_ANCHOR"; fid: string; court: number; anchor: AnchorId };
 
@@ -67,9 +82,16 @@ function reducer(state: Facility[], action: Action): Facility[] {
     case "ADD_FACILITY": {
       const next = [...state, action.payload];
       save(next); return next;
-    }
-    case "UPDATE_FACILITY": {
+    }    case "UPDATE_FACILITY": {
       const next = state.map(f => f.id === action.payload.id ? action.payload : f);
+      save(next); return next;
+    }
+    case "UPDATE_ZEITRAUM": {
+      const next = state.map(f => 
+        f.id === action.fid 
+          ? { ...f, zeitraum: action.zeitraum }
+          : f
+      );
       save(next); return next;
     }
     case "UPDATE_LINE_DETAILS": {

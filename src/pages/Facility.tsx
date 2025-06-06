@@ -23,12 +23,11 @@ export default function Facility() {
       payload: { ...fac, view: tempView }
     });
     setIsEditingView(false);
-  };
-
-  const handleViewCancel = () => {
+  };  const handleViewCancel = () => {
     setIsEditingView(false);
     setTempView("");
   };
+
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 overflow-hidden">
       {/* Header */}
@@ -61,7 +60,7 @@ export default function Facility() {
       <footer className="bg-white/90 backdrop-blur-sm border-t border-teal-100 shadow-sm flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-center gap-3 text-sm md:text-base">
-            <span className="text-slate-600 font-medium">🧭 Blickrichtung:</span>
+            <span className="text-slate-600 font-medium">👓 Blickrichtung:</span>
             {isEditingView ? (
               <div className="flex items-center gap-3 bg-white rounded-xl p-2 shadow-md border border-teal-200">
                 <input 
